@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>이차함수 그래프 탐구</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --panel: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --line: #dbe3ef;
+      --accent: #2563eb;
+      --accent-soft: #eaf2ff;
+      --axis: #64748b;
+      --curve: #2563eb;
+      --vertex: #dc2626;
+      --shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Pretendard", "Noto Sans KR", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: linear-gradient(180deg, #f7f9fc 0%, #eef3f9 100%);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .app {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 28px 0 40px;
+    }
+
+    header {
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(1.65rem, 3vw, 2.3rem);
+      letter-spacing: -0.04em;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.98rem;
+      line-height: 1.6;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+      gap: 20px;
+      align-items: start;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .controls {
+      padding: 20px;
+      position: sticky;
+      top: 16px;
+    }
+
+    .formula-box {
+      background: var(--accent-soft);
+      border: 1px solid #cfe0ff;
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 18px;
+    }
+
+    .formula-label {
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-bottom: 6px;
+      font-weight: 700;
+    }
+
+    .formula {
+      font-size: 1.32rem;
+      font-weight: 800;
+      letter-spacing: 0.01em;
+      word-break: break-word;
+    }
+
+    .slider-group {
+      margin: 18px 0;
+    }
+
+    .slider-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+
+    .value-badge {
+      min-width: 48px;
+      text-align: center;
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 4px 8px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .info {
+      margin-top: 16px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px 12px;
+      background: #f8fafc;
+      border-radius: 10px;
+      font-size: 0.94rem;
+    }
+
+    .info-row span:first-child {
+      color: var(--muted);
+    }
+
+    .main {
+      display: grid;
+      gap: 20px;
+    }
+
+    .graph-panel {
+      padding: 16px;
+    }
+
+    .canvas-wrap {
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      min-height: 320px;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      background: #ffffff;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-top: 12px;
+      font-size: 0.88rem;
+      color: var(--muted);
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .dot, .line-sample {
+      flex: 0 0 auto;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--vertex);
+    }
+
+    .line-sample {
+      width: 22px;
+      height: 3px;
+      background: var(--curve);
+      border-radius: 999px;
+    }
+
+    .axis-sample {
+      width: 22px;
+      border-top: 2px dashed #0f766e;
+    }
+
+    .missions {
+      padding: 20px;
+    }
+
+    .missions h2 {
+      margin: 0 0 14px;
+      font-size: 1.15rem;
+    }
+
+    .mission-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .mission {
+      display: grid;
+      grid-template-columns: 34px 1fr;
+      gap: 10px;
+      align-items: start;
+      padding: 14px;
+      background: #fbfdff;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      line-height: 1.55;
+      font-size: 0.95rem;
+    }
+
+    .mission-num {
+      width: 30px;
+      height: 30px;
+      display: grid;
+      place-items: center;
+      border-radius: 9px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-weight: 800;
+    }
+
+    .tip {
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 0.86rem;
+    }
+
+    .warning {
+      display: none;
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: #fff7ed;
+      border: 1px solid #fed7aa;
+      color: #9a3412;
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 820px) {
+      .app {
+        width: min(100% - 20px, 720px);
+        padding-top: 18px;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .controls {
+        position: static;
+      }
+
+      .canvas-wrap {
+        min-height: 280px;
+        aspect-ratio: 4 / 3;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .controls, .missions, .graph-panel {
+        padding: 14px;
+      }
+
+      .info-row {
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .canvas-wrap {
+        min-height: 250px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>이차함수 그래프 탐구</h1>
+      <p class="subtitle">슬라이더를 움직여 계수 <strong>a, b, c</strong>가 그래프의 모양과 위치에 어떤 영향을 주는지 관찰해 보세요.</p>
+    </header>
+
+    <div class="grid">
+      <section class="panel controls">
+        <div class="formula-box">
+          <div class="formula-label">현재 함수</div>
+          <div class="formula" id="formula">y = x²</div>
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-head">
+            <label for="a">계수 a</label>
+            <span class="value-badge" id="aValue">1.0</span>
+          </div>
+          <input id="a" type="range" min="-5" max="5" step="0.1" value="1" />
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-head">
+            <label for="b">계수 b</label>
+            <span class="value-badge" id="bValue">0.0</span>
+          </div>
+          <input id="b" type="range" min="-10" max="10" step="0.1" value="0" />
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-head">
+            <label for="c">계수 c</label>
+            <span class="value-badge" id="cValue">0.0</span>
+          </div>
+          <input id="c" type="range" min="-10" max="10" step="0.1" value="0" />
+        </div>
+
+        <div class="info">
+          <div class="info-row">
+            <span>꼭짓점</span>
+            <strong id="vertexText">(0, 0)</strong>
+          </div>
+          <div class="info-row">
+            <span>대칭축</span>
+            <strong id="axisText">x = 0</strong>
+          </div>
+          <div class="info-row">
+            <span>그래프 방향</span>
+            <strong id="directionText">위로 열린다</strong>
+          </div>
+        </div>
+
+        <div class="warning" id="linearWarning">a = 0이면 이차함수가 아니라 일차함수 y = bx + c가 됩니다.</div>
+      </section>
+
+      <main class="main">
+        <section class="panel graph-panel">
+          <div class="canvas-wrap" id="canvasWrap">
+            <canvas id="graph" aria-label="이차함수 그래프"></canvas>
+          </div>
+          <div class="legend">
+            <div class="legend-item"><span class="line-sample"></span>함수 그래프</div>
+            <div class="legend-item"><span class="dot"></span>꼭짓점</div>
+            <div class="legend-item"><span class="axis-sample"></span>대칭축</div>
+          </div>
+        </section>
+
+        <section class="panel missions">
+          <h2>관찰 미션</h2>
+          <div class="mission-list">
+            <div class="mission">
+              <div class="mission-num">1</div>
+              <div><strong>a의 부호</strong>를 양수와 음수로 바꾸어 보세요. 그래프가 열리는 방향은 어떻게 달라지나요?</div>
+            </div>
+            <div class="mission">
+              <div class="mission-num">2</div>
+              <div><strong>b의 값만</strong> 바꾸어 보세요. 꼭짓점과 대칭축의 위치는 어떤 방식으로 이동하나요?</div>
+            </div>
+            <div class="mission">
+              <div class="mission-num">3</div>
+              <div><strong>c의 값만</strong> 바꾸어 보세요. 그래프와 y축이 만나는 점은 어떻게 변하나요?</div>
+            </div>
+          </div>
+          <p class="tip">팁: 한 번에 하나의 계수만 바꾸면 각 계수의 역할을 더 쉽게 관찰할 수 있습니다.</p>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('graph');
+    const ctx = canvas.getContext('2d');
+    const wrap = document.getElementById('canvasWrap');
+
+    const sliders = {
+      a: document.getElementById('a'),
+      b: document.getElementById('b'),
+      c: document.getElementById('c')
+    };
+
+    const labels = {
+      a: document.getElementById('aValue'),
+      b: document.getElementById('bValue'),
+      c: document.getElementById('cValue')
+    };
+
+    const formulaEl = document.getElementById('formula');
+    const vertexText = document.getElementById('vertexText');
+    const axisText = document.getElementById('axisText');
+    const directionText = document.getElementById('directionText');
+    const linearWarning = document.getElementById('linearWarning');
+
+    const view = {
+      xMin: -10,
+      xMax: 10,
+      yMin: -10,
+      yMax: 10
+    };
+
+    function clean(n) {
+      return Math.abs(n) < 1e-9 ? 0 : n;
+    }
+
+    function fmt(n, digits = 2) {
+      n = clean(n);
+      const rounded = Number(n.toFixed(digits));
+      return Number.isInteger(rounded) ? String(rounded) : String(rounded);
+    }
+
+    function signedTerm(value, variable = '') {
+      if (value === 0) return '';
+      const sign = value > 0 ? ' + ' : ' - ';
+      const abs = Math.abs(value);
+      let coefficient = fmt(abs, 1);
+      if (variable && Math.abs(abs - 1) < 1e-9) coefficient = '';
+      return sign + coefficient + variable;
+    }
+
+    function buildFormula(a, b, c) {
+      if (a === 0) {
+        let text = 'y = ';
+        if (b === 0) return text + fmt(c, 1);
+        text += (b === -1 ? '-' : b === 1 ? '' : fmt(b, 1)) + 'x';
+        text += signedTerm(c);
+        return text;
+      }
+
+      let text = 'y = ';
+      text += (a === -1 ? '-' : a === 1 ? '' : fmt(a, 1)) + 'x²';
+      text += signedTerm(b, 'x');
+      text += signedTerm(c);
+      return text;
+    }
+
+    function resizeCanvas() {
+      const rect = wrap.getBoundingClientRect();
+      const dpr = Math.max(1, window.devicePixelRatio || 1);
+      canvas.width = Math.round(rect.width * dpr);
+      canvas.height = Math.round(rect.height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      draw();
+    }
+
+    function xToPx(x, width) {
+      return (x - view.xMin) / (view.xMax - view.xMin) * width;
+    }
+
+    function yToPx(y, height) {
+      return height - (y - view.yMin) / (view.yMax - view.yMin) * height;
+    }
+
+    function drawGrid(width, height) {
+      ctx.clearRect(0, 0, width, height);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, width, height);
+
+      ctx.lineWidth = 1;
+      ctx.font = '12px system-ui';
+      ctx.fillStyle = '#64748b';
+
+      for (let x = Math.ceil(view.xMin); x <= Math.floor(view.xMax); x++) {
+        const px = xToPx(x, width);
+        ctx.beginPath();
+        ctx.strokeStyle = x === 0 ? '#64748b' : '#e7edf5';
+        ctx.lineWidth = x === 0 ? 1.7 : 1;
+        ctx.moveTo(px, 0);
+        ctx.lineTo(px, height);
+        ctx.stroke();
+
+        if (x !== 0 && x % 2 === 0) {
+          ctx.fillText(String(x), px + 4, yToPx(0, height) - 6);
+        }
+      }
+
+      for (let y = Math.ceil(view.yMin); y <= Math.floor(view.yMax); y++) {
+        const py = yToPx(y, height);
+        ctx.beginPath();
+        ctx.strokeStyle = y === 0 ? '#64748b' : '#e7edf5';
+        ctx.lineWidth = y === 0 ? 1.7 : 1;
+        ctx.moveTo(0, py);
+        ctx.lineTo(width, py);
+        ctx.stroke();
+
+        if (y !== 0 && y % 2 === 0) {
+          ctx.fillText(String(y), xToPx(0, width) + 6, py - 4);
+        }
+      }
+
+      const originX = xToPx(0, width);
+      const originY = yToPx(0, height);
+      ctx.fillStyle = '#475569';
+      ctx.fillText('0', originX + 5, originY + 14);
+      ctx.fillText('x', width - 14, originY - 8);
+      ctx.fillText('y', originX + 8, 14);
+    }
+
+    function draw() {
+      const rect = canvas.getBoundingClientRect();
+      const width = rect.width;
+      const height = rect.height;
+      if (!width || !height) return;
+
+      const a = parseFloat(sliders.a.value);
+      const b = parseFloat(sliders.b.value);
+      const c = parseFloat(sliders.c.value);
+
+      drawGrid(width, height);
+
+      if (a !== 0) {
+        const h = -b / (2 * a);
+        const k = a * h * h + b * h + c;
+
+        const axisX = xToPx(h, width);
+        if (axisX >= 0 && axisX <= width) {
+          ctx.save();
+          ctx.setLineDash([7, 6]);
+          ctx.strokeStyle = '#0f766e';
+          ctx.lineWidth = 1.6;
+          ctx.beginPath();
+          ctx.moveTo(axisX, 0);
+          ctx.lineTo(axisX, height);
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        const vx = xToPx(h, width);
+        const vy = yToPx(k, height);
+        if (vx >= -10 && vx <= width + 10 && vy >= -10 && vy <= height + 10) {
+          ctx.fillStyle = '#dc2626';
+          ctx.beginPath();
+          ctx.arc(vx, vy, 5.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      ctx.strokeStyle = '#2563eb';
+      ctx.lineWidth = 3;
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+
+      let started = false;
+      const steps = Math.max(600, Math.floor(width * 1.6));
+      for (let i = 0; i <= steps; i++) {
+        const x = view.xMin + (view.xMax - view.xMin) * i / steps;
+        const y = a * x * x + b * x + c;
+        const px = xToPx(x, width);
+        const py = yToPx(y, height);
+
+        if (!Number.isFinite(py) || py < -height * 3 || py > height * 4) {
+          started = false;
+          continue;
+        }
+
+        if (!started) {
+          ctx.moveTo(px, py);
+          started = true;
+        } else {
+          ctx.lineTo(px, py);
+        }
+      }
+      ctx.stroke();
+    }
+
+    function updateUI() {
+      const a = parseFloat(sliders.a.value);
+      const b = parseFloat(sliders.b.value);
+      const c = parseFloat(sliders.c.value);
+
+      labels.a.textContent = a.toFixed(1);
+      labels.b.textContent = b.toFixed(1);
+      labels.c.textContent = c.toFixed(1);
+      formulaEl.textContent = buildFormula(a, b, c);
+
+      if (a === 0) {
+        vertexText.textContent = '없음';
+        axisText.textContent = '없음';
+        directionText.textContent = b === 0 ? '상수함수' : '일차함수';
+        linearWarning.style.display = 'block';
+      } else {
+        const h = -b / (2 * a);
+        const k = a * h * h + b * h + c;
+        vertexText.textContent = `(${fmt(h)}, ${fmt(k)})`;
+        axisText.textContent = `x = ${fmt(h)}`;
+        directionText.textContent = a > 0 ? '위로 열린다' : '아래로 열린다';
+        linearWarning.style.display = 'none';
+      }
+
+      draw();
+    }
+
+    Object.values(sliders).forEach(slider => {
+      slider.addEventListener('input', updateUI);
+    });
+
+    const observer = new ResizeObserver(resizeCanvas);
+    observer.observe(wrap);
+    window.addEventListener('resize', resizeCanvas);
+
+    updateUI();
+    resizeCanvas();
+  </script>
+</body>
+</html>
